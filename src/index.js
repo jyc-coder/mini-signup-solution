@@ -35,16 +35,17 @@ const PW_CHECK_ERROR_MSG = {
     required: '필수 정보입니다.',
     invalid: '비밀번호가 일치하지 않습니다.',
 }
-
-const checkIdValidation = (value) => {
-    // (공통) 모든 필드의 값은 빠짐 없이 입력해야 합니다.
-    // 5~20자, 영문 소문자 ,숫자 ,특수기호(_),(-)만 사용가능
-    let isValidId
+// (공통) 모든 필드의 값은 빠짐 없이 입력해야 합니다.
+// 5~20자, 영문 소문자 ,숫자 ,특수기호(_),(-)만 사용가능
+const checkIdRegex = (value) => {
     if (value.length === 0) {
-        isValidId = 'required'
+        return 'required'
     } else {
-        isValidId = ID_REGEX.test(value) ? true : 'invalid'
+        return ID_REGEX.test(value) ? true : 'invalid'
     }
+}
+const checkIdValidation = (value) => {
+    const isValidId = checkIdRegex(value)
     // 3. 커스텀 에러 메시지
     // (1) 비어 있을때 (2) 유효하지 않은 값을 때
     // input 태그에 border-red-600 class 추가 & **-msg div 에 에러 메시지 추가
@@ -56,17 +57,22 @@ const checkIdValidation = (value) => {
         $id.classList.remove('border-red-600')
         $idMsg.innerText = ''
     }
+
+    return isValidId
 }
 $id.addEventListener('focusout', () => checkIdValidation($id.value))
 
-const checkPwvalidation = (value) => {
-    // 8~16자, 영문 대/소문자, 숫자 사용가능
-    let isValidPw
+const checkPwRegex = (value) => {
     if (value.length === 0) {
-        isValidPw = 'required'
+        return 'required'
     } else {
-        isValidPw = PW_REGEX.test(value) ? true : 'invalid'
+        return PW_REGEX.test(value) ? true : 'invalid'
     }
+}
+
+const checkPwValidation = (value) => {
+    // 8~16자, 영문 대/소문자, 숫자 사용가능
+    const isValidPw = checkPwRegex(value)
 
     if (isValidPw !== true) {
         // isValidPw => required, invalid
@@ -76,18 +82,23 @@ const checkPwvalidation = (value) => {
         $pw.classList.remove('border-red-600')
         $pwMsg.innerText = ''
     }
+
+    return isValidPw
 }
 
-$pw.addEventListener('focusout', () => checkPwvalidation($pw.value))
+$pw.addEventListener('focusout', () => checkPwValidation($pw.value))
+
+const checkPwCheckRegex = (value) => {
+    if (value.length === 0) {
+        return 'required'
+    } else {
+        return $pw.value === value ? true : 'invalid'
+    }
+}
 
 const checkPwCheckValidation = (value) => {
     // 비밀번호와 같은 값이어야함
-    let isValidPwCheck
-    if (value.length === 0) {
-        isValidPwCheck = 'required'
-    } else {
-        isValidPwCheck = $pw.value === value ? true : 'invalid'
-    }
+    const isValidPwCheck = checkPwCheckRegex(value)
 
     if (isValidPwCheck !== true) {
         // isValidPwCheck => required, invalid
@@ -97,6 +108,8 @@ const checkPwCheckValidation = (value) => {
         $pwCheck.classList.remove('border-red-600')
         $pwCheckMsg.innerText = ''
     }
+
+    return isValidPwCheck
 }
 
 $pwCheck.addEventListener('focusout', () =>
@@ -105,10 +118,34 @@ $pwCheck.addEventListener('focusout', () =>
 
 const $submit = document.getElementById('submit')
 
+//4. 입력 확인 모달 창 구현
+const $modal = document.getElementById('modal')
+
+const $confirmId = document.getElementById('confirm-id')
+const $confirmPw = document.getElementById('confirm-pw')
+
+const $cancelBtn = document.getElementById('cancel-btn')
+const $approveBtn = document.getElementById('approve-btn')
+
 $submit.addEventListener('click', (e) => {
     e.preventDefault()
-    console.log(e)
-    checkIdValidation($id.value)
-    checkPwvalidation($pw.value)
-    checkPwCheckValidation($pwCheck.value)
+    const isValidForm =
+        checkIdValidation($id.value) == true &&
+        checkPwValidation($pw.value) == true &&
+        checkPwCheckValidation($pwCheck.value) === true
+    if (isValidForm) {
+        $confirmId.innerText = $id.value
+        $confirmPw.innerText = $pw.value
+        $modal.showModal()
+    }
+})
+
+$cancelBtn.addEventListener('click', () => {
+    $modal.close()
+})
+
+$approveBtn.addEventListener('click', () => {
+    window.alert('가입되었습니다 🥳')
+    location.reload()
+    $modal.close()
 })
